@@ -81,7 +81,7 @@ paging:  (%d)
 
 ### GENERATOR
 
-??? ¯\_(ツ)_/¯
+* ??? ¯\_(ツ)_/¯
 
 ### OUTPUT
 
@@ -134,6 +134,24 @@ paging:  (%d)
 - Out: API client libraries (SDK generation), server stubs to be used with gRPC (https://grpc.io/)
 ```
 
+---
+
+## Examples of code generators
+
+* [hugo](https://gohugo.io/)
+
+```text
+- In: Go Template Files
+- Out: Static website files (html,css,js, ...)
+```
+
+* [helm](https://helm.sh/)
+
+```text
+- In: Template Files aka "Helm Charts"
+- Out: Kubernetes Manifests / YAML
+```
+
 * [stringer](https://golang.org/x/tools/cmd/stringer)
 
 ```text
@@ -145,7 +163,7 @@ More details in a second! :D
 
 ---
 
-## Let's check out stringer:
+## Let's do a stringer deep-dive:
 
 * [stringer](https://golang.org/x/tools/cmd/stringer)
 
@@ -189,7 +207,7 @@ func main() {
 Output:
 
 ```bash
-go run genres.go
+go run genre.go
 Let's watch a 0 movie today!
 ```
 
@@ -223,7 +241,7 @@ func (g Genre) String() string {
 Output:
 
 ```bash
-go run genres.go
+go run genre.go
 Let's watch a horror movie today!
 ```
 
@@ -238,7 +256,7 @@ go install  golang.org/x/tools/cmd/stringer
 stringer -type=Genre
 
 genre_string.go // I'm generated! :D 
-genres.go
+genre.go
 ```
 
 ---
@@ -305,15 +323,17 @@ func main() {
 Output:
 
 ```bash
-go run genres.go
+go run .
 Let's watch a horror movie today!
 ```
 
 ---
 
-## Cool, but do I always have to run stringer by hand?
+## Go generate directive
 
-No! Go Tooling speeds up our workflow! `go generate` helps us to automate the process of running code generators by scanning comments in your Go source code and find commands to execute
+> Cool, but do I always have to run stringer by hand?
+
+No! `go generate` helps us to automate the process of running code generators by scanning comments in your Go source code and find commands to execute
 
 ```go
 //go:generate stringer -type=Genre
@@ -364,7 +384,7 @@ func main() {
 Output:
 
 ```bash
-go run genres.go
+go run .
 Let's watch a horror movie today!
 ```
 
@@ -388,6 +408,11 @@ func (g Genre) String() string {
 	}
 }
 ```
+
+---
+
+
+# Let's build our own code generator!
 
 --- 
 
@@ -413,6 +438,22 @@ func main() {
 	constantNames := []string{}
 	// ...
 ```
+
+---
+
+## Build a code generator: implementation
+
+> Gather all constant declarations of type `T` in the source package
+
+Go has powerful packages to analyze source code's Tokens, Syntax Tree (AST), Objects and much more
+
+* [go/types](https://pkg.go.dev/go/types)
+* [go/ast](https://pkg.go.dev/go/ast)
+* [go/token](https://pkg.go.dev/go/token)
+
+as well as wrappers around them:
+
+see [go/packages](https://pkg.go.dev/golang.org/x/tools@v0.1.12/go/packages/gopackages)
 
 ---
 
@@ -532,7 +573,7 @@ if err := outputFile.Close(); err != nil {
 go build -o generator genres-example-1/gen
 ```
 
-add `go:generate` directive to `genres.go`
+add `go:generate` directive to `genre.go`
 
 ```go
 //go:generate ./generator Genre
@@ -547,7 +588,7 @@ and run `go generate .`
 
 ## Build a code generator: Execute!
 
-Output of `gen_genre_string.go`:
+Content of `gen_genre_string.go`:
 
 ```go
 package main
@@ -574,7 +615,15 @@ func (v Genre) String() string {
 }
 ```
 
+Output:
+
+```bash
+go run .
+Let's watch a horror movie today!
+```
+
 ---
+
 
 ## Build a code generator: Improvements!
 
@@ -599,30 +648,48 @@ func format(in io.Reader) (io.Reader, error) {
 ## Build a code generator: Improvements!
 
 ```go
-// ... 
-t, err := template.New("").Parse(tmpl)
-if err != nil {
-	return err
-}
+// ExecuteWebhookEventTypesTemplate renders the named template and writes to io.Writer wr.
+func ExecuteTemplate(file string, tmpl string, data interface{}) error {
+	wr := os.Stdout
+	if output := file; output != "" {
+		wri, err := os.Create(output)
+		if err != nil {
+			return err
+		}
+		wr = wri
+		defer wr.Close()
+	}
 
-err = t.ExecuteTemplate(buf, "", data)	
-if err != nil {		
-	return err
-}
+	buf := new(bytes.Buffer)
 
-src, err := format(buf) // format the generated code
-if err != nil {
+	t, err := template.New("").Parse(tmpl)
+	if err != nil {
+		return err
+	}
+
+	err = t.ExecuteTemplate(buf, "", data)
+	if err != nil {
+		return err
+	}
+
+	src, err := format(buf)
+	if err != nil {
+		return err
+	}
+	_, err = io.Copy(wr, src)
 	return err
 }
-_, err = io.Copy(wr, src)
-return err
 ```
+
+---
+
+# Let's wrap it up!
 
 ---
 
 ## Let's wrap it up!
 
-In this talk we
+We...
 * Understood what code generation is
 * Examined the basic parts of a code generator
 * Looked at some (un)popular code generators e.g. `stringer`
@@ -630,13 +697,13 @@ In this talk we
 * Wrote a simple code generator
   * Not well-tested, lacks proper error handling (missing types, ...)
   * not performant
-  * not the prettiest code ever
+  * not the prettiest code
 
 ---
 
 ## Where to go from here? 
 
-* Code is available [here](https://github.com/cbrgm/codegen-example)
+* All code is available [here](https://github.com/cbrgm/codegen-example)
 * There's a great Article about `stringer` by Rob Pike [here](https://go.dev/blog/generate)
 * Check out Paul Jolly's Talk at GopherCon UK 2019 [here](https://www.youtube.com/watch?v=xcpboZZy-64)
 * Check out [cbrgm/githubevents](https://github.com/cbrgm/githubevents)
