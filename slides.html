@@ -1,3 +1,36 @@
+
+
+<!DOCTYPE html>
+<html>
+<head>
+    <title>My Awesome Presentation</title>
+    <link href="favicon.png" rel="icon" type="image/png"/>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8"/>
+    <style type="text/css">
+        @import url(https://fonts.googleapis.com/css?family=Yanone+Kaffeesatz);
+        @import url(https://fonts.googleapis.com/css?family=Droid+Serif:400,700,400italic);
+        @import url(https://fonts.googleapis.com/css?family=Ubuntu+Mono:400,700,400italic);
+
+        body { font-family: 'Droid Serif'; }
+        h1, h2, h3 {
+            font-family: 'Yanone Kaffeesatz';
+            font-weight: normal;
+        }
+        .remark-code, .remark-inline-code { font-family: 'Ubuntu Mono'; }
+    </style>
+</head>
+<body>
+<textarea id="source">
+
+class: center, middle
+
+---
+theme: ./path/to/theme.json
+author: Chris Bargmann
+date: MMMM dd, YYYY
+paging:  (%d)
+---
+
 ---
 theme: ./path/to/theme.json
 author: Chris Bargmann
@@ -23,7 +56,7 @@ paging:  (%d)
 * See how we can add code generation to our dev workflow
 * Write a simple code generator
 
-...and hopefully we can do all this in 20 min! :D 
+...and hopefully we can do all this in 20 min! :D
 
 ---
 
@@ -140,7 +173,7 @@ paging:  (%d)
 - In: type declarations in your Go code
 - Out: A given `String()` method for those type declarations
 
-More details in a second! :D 
+More details in a second! :D
 ```
 
 ---
@@ -237,7 +270,7 @@ Let's generate it!
 go install  golang.org/x/tools/cmd/stringer
 stringer -type=Genre
 
-genre_string.go // I'm generated! :D 
+genre_string.go // I'm generated! :D
 genres.go
 ```
 
@@ -318,7 +351,7 @@ No! Go Tooling speeds up our workflow! `go generate` helps us to automate the pr
 ```go
 //go:generate stringer -type=Genre
 ```
-We can run `go generate with a list of packages like this:
+We can run `go generate` with a list of packages like this:
 
 ```bash
 go generate ./...
@@ -389,7 +422,7 @@ func (g Genre) String() string {
 }
 ```
 
---- 
+---
 
 ## Let's build our own code generator
 
@@ -448,7 +481,7 @@ see [packages](https://pkg.go.dev/golang.org/x/tools@v0.1.12/go/packages/gopacka
 	if targetType == nil {
 		panic(fmt.Errorf("failed to find type declaration for %v", typeName))
 	}
-    
+
 	// lookup all constants of the target type (e.g. "horror", "drama", ...)
 	for _, file := range pkg.Syntax {
 		for _, decl := range file.Decls {
@@ -599,14 +632,14 @@ func format(in io.Reader) (io.Reader, error) {
 ## Build a code generator: Improvements!
 
 ```go
-// ... 
+// ...
 t, err := template.New("").Parse(tmpl)
 if err != nil {
 	return err
 }
 
-err = t.ExecuteTemplate(buf, "", data)	
-if err != nil {		
+err = t.ExecuteTemplate(buf, "", data)
+if err != nil {
 	return err
 }
 
@@ -634,7 +667,7 @@ In this talk we
 
 ---
 
-## Where to go from here? 
+## Where to go from here?
 
 * Code is available [here](https://github.com/cbrgm/codegen-example)
 * There's a great Article about `stringer` by Rob Pike [here](https://go.dev/blog/generate)
@@ -654,4 +687,12 @@ In this talk we
 
 📧 chris@cbrgm.net
 
+    </textarea>
+<script src="https://remarkjs.com/downloads/remark-latest.min.js" type="text/javascript">
+</script>
+<script type="text/javascript">
+    var slideshow = remark.create({ ratio: "16:9" });
 
+</script>
+</body>
+</html>
