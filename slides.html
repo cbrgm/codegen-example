@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>My Awesome Presentation</title>
+    <title>Exploring Code Generation in Go</title>
     <link href="favicon.png" rel="icon" type="image/png"/>
     <meta http-equiv="Content-Type" content="text/html; charset=UTF-8"/>
     <style type="text/css">
@@ -22,16 +22,9 @@
 
 class: center, middle
 
----
-theme: ./path/to/theme.json
-author: Chris Bargmann
-date: MMMM dd, YYYY
-paging:  (%d)
----
-
 # Exploring Code Generation with Templating in Go
 
-👨‍💻 __Christian Bargmann (cbrgm)__
+👨‍💻 __Christian Bargmann (Github: cbrgm)__
 
 🐦 @chrisbargmann
 
@@ -105,7 +98,7 @@ paging:  (%d)
 
 ### GENERATOR
 
-??? ¯\_(ツ)_/¯
+* ??? ¯\_(ツ)_/¯
 
 ### OUTPUT
 
@@ -231,7 +224,7 @@ func main() {
 Output:
 
 ```bash
-go run genres.go
+go run genre.go
 Let's watch a 0 movie today!
 ```
 
@@ -265,7 +258,7 @@ func (g Genre) String() string {
 Output:
 
 ```bash
-go run genres.go
+go run genre.go
 Let's watch a horror movie today!
 ```
 
@@ -280,7 +273,7 @@ go install  golang.org/x/tools/cmd/stringer
 stringer -type=Genre
 
 genre_string.go // I'm generated! :D 
-genres.go
+genre.go
 ```
 
 ---
@@ -347,7 +340,7 @@ func main() {
 Output:
 
 ```bash
-go run genres.go
+go run .
 Let's watch a horror movie today!
 ```
 
@@ -408,7 +401,7 @@ func main() {
 Output:
 
 ```bash
-go run genres.go
+go run .
 Let's watch a horror movie today!
 ```
 
@@ -597,7 +590,7 @@ if err := outputFile.Close(); err != nil {
 go build -o generator genres-example-1/gen
 ```
 
-add `go:generate` directive to `genres.go`
+add `go:generate` directive to `genre.go`
 
 ```go
 //go:generate ./generator Genre
