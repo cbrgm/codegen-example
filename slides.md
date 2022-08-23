@@ -318,7 +318,7 @@ No! Go Tooling speeds up our workflow! `go generate` helps us to automate the pr
 ```go
 //go:generate stringer -type=Genre
 ```
-We can run `go generate with a list of packages like this:
+We can run `go generate` with a list of packages like this:
 
 ```bash
 go generate ./...
