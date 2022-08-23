@@ -1,13 +1,6 @@
----
-theme: ./path/to/theme.json
-author: Chris Bargmann
-date: MMMM dd, YYYY
-paging:  (%d)
----
-
 # Exploring Code Generation with Templating in Go
 
-👨‍💻 __Christian Bargmann (cbrgm)__
+👨‍💻 __Christian Bargmann (Github: cbrgm)__
 
 🐦 @chrisbargmann
 
@@ -390,7 +383,20 @@ Let's watch a horror movie today!
 
 ---
 
-## Let's build our own code generator
+## Let's build a simple code generator
+
+Recap:
+* We know what code generation is
+* We know about some (un)popular code generators
+* We learned about the `go:generate` directive and how we can add it to our dev workflow
+* We just saw a simple code generator (`stringer`) in action
+
+... now it's time to build our own code generator!
+
+---
+
+
+## Let's build a simple code generator
 
 Let's stick with the `stringer` example for now.
 
@@ -411,12 +417,7 @@ func (g Genre) String() string {
 
 ---
 
-
-# Let's build our own code generator!
-
---- 
-
-## Let's build our own code generator
+## Let's build a simple code generator
 
 Our code generator will:
 * take the name `Type` of an integer type `T` as a CLI argument
@@ -445,7 +446,7 @@ func main() {
 
 > Gather all constant declarations of type `T` in the source package
 
-Go has powerful packages to analyze source code's Tokens, Syntax Tree (AST), Objects and much more
+Go has powerful packages to analyze Tokens, (Abstract) Syntax Tree (AST), Objects and much more
 
 * [go/types](https://pkg.go.dev/go/types)
 * [go/ast](https://pkg.go.dev/go/ast)
@@ -504,7 +505,7 @@ see [packages](https://pkg.go.dev/golang.org/x/tools@v0.1.12/go/packages/gopacka
 				spec := spec.(*ast.ValueSpec)
 				for _, name := range spec.Names {
 					if pkg.TypesInfo.Defs[name].Type() == targetType.Type() {
-						constantNames = append(constantNames, name.Name)
+						constantNames = append(constantNames, name.Name) // FOUND! :D 
 					}
 				}
 			}
@@ -534,6 +535,10 @@ func (v {{.Type}}) String() string {
 }`
 ```
 
+* [text/template](https://pkg.go.dev/text/template)
+* Package template implements data-driven templates for generating textual output.
+* Provides Loops, Conditions, Parameters, ...
+
 ---
 
 ## Build a code generator: implementation
@@ -555,7 +560,7 @@ if err := tmpl.Execute(outputFile, struct {
 }{
 	PackageName:       pkg.Name,
 	Type:              typeName,
-	DeclaredConstants: constantNames,
+	DeclaredConstants: constantNames, // set the constants slice :D
 	}); err != nil {
 	panic(err)
 }
@@ -624,7 +629,6 @@ Let's watch a horror movie today!
 
 ---
 
-
 ## Build a code generator: Improvements!
 
 Format the generated Go code with `gofmt`
@@ -648,7 +652,7 @@ func format(in io.Reader) (io.Reader, error) {
 ## Build a code generator: Improvements!
 
 ```go
-// ExecuteWebhookEventTypesTemplate renders the named template and writes to io.Writer wr.
+// ExecuteTemplate renders the named template and writes to io.Writer wr.
 func ExecuteTemplate(file string, tmpl string, data interface{}) error {
 	wr := os.Stdout
 	if output := file; output != "" {
@@ -672,7 +676,7 @@ func ExecuteTemplate(file string, tmpl string, data interface{}) error {
 		return err
 	}
 
-	src, err := format(buf)
+	src, err := format(buf) // format the buffered template
 	if err != nil {
 		return err
 	}
@@ -704,12 +708,14 @@ We...
 ## Where to go from here? 
 
 * All code is available [here](https://github.com/cbrgm/codegen-example)
+	* https://github.com/cbrgm/codegen-example
 * There's a great Article about `stringer` by Rob Pike [here](https://go.dev/blog/generate)
 * Check out Paul Jolly's Talk at GopherCon UK 2019 [here](https://www.youtube.com/watch?v=xcpboZZy-64)
+* Tokenizing, ASTs and more theory: Crafting Interpreters, Nystrom, Robert, ISBN: 9780990582939
 * Check out [cbrgm/githubevents](https://github.com/cbrgm/githubevents)
   * Generated Go Library for Github Webhook Events (Feel free to contribute :D!!)
 
-...and also, MOIA is hiring :) Approach me if you're interested!
+...and also, my team @[MOIA](https://www.moia.io/de-DE) is hiring :) Approach me if you're interested!
 
 ---
 
@@ -720,5 +726,3 @@ We...
 🐦 @chrisbargmann
 
 📧 chris@cbrgm.net
-
-

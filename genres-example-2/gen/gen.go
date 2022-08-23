@@ -3,12 +3,13 @@ package main
 import (
 	"bytes"
 	"fmt"
-	"golang.org/x/tools/go/packages"
 	"html/template"
 	"io"
 	"os"
 	"os/exec"
 	"strings"
+
+	"golang.org/x/tools/go/packages"
 )
 
 func main() {
@@ -54,7 +55,7 @@ func (v {{.Type}}) String() string {
 	})
 }
 
-// ExecuteWebhookEventTypesTemplate renders the named template and writes to io.Writer wr.
+// ExecuteTemplate renders the named template and writes to io.Writer wr.
 func ExecuteTemplate(file string, tmpl string, data interface{}) error {
 	wr := os.Stdout
 	if output := file; output != "" {
