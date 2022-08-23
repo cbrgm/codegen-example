@@ -11,6 +11,8 @@ paging:  (%d)
 
 🐦 @chrisbargmann
 
+📧 chris@cbrgm.net
+
 ---
 
 # What are we going to cover?
@@ -360,3 +362,289 @@ Let's watch a horror movie today!
 ```
 
 ---
+
+# Let's build our own code generator
+
+Let's stick with the `stringer` example for now.
+
+```go
+// String returns the iota's string representation
+func (g Genre) String() string {
+	switch g {
+	case horror:
+		return "horror"
+	case comedy:
+		return "comedy"
+    // pretty repetitive huh...?
+	default:
+		return ""
+	}
+}
+```
+
+--- 
+
+# Let's build our own code generator
+
+Our code generator will:
+* take the name `Type` of an integer type `T` as a CLI argument
+* Gather all constant declarations of type `T` in the source package
+* Create a new file `gen_<typename>_string.go` which defines the `String()` func
+
+---
+
+# Build a code generator: implementation
+
+> take the name `Type` of an integer type `T` as a CLI argument
+
+```go
+// Our Codegenerator is a Go program, so let's start with a main func
+func main() {
+	// the name of the type we're looking for
+	typeName := os.Args[1]
+	// constants definitions
+	constantNames := []string{}
+	// ...
+```
+
+---
+
+# Build a code generator: implementation
+
+> Gather all constant declarations of type `T` in the source package
+
+see [packages](https://pkg.go.dev/golang.org/x/tools@v0.1.12/go/packages/gopackages)
+
+```go
+    //  load types, syntax information, ... of the current package
+    cfg := &packages.Config{
+		Mode: packages.NeedTypes | packages.NeedTypesInfo |
+			packages.NeedSyntax | packages.NeedName,
+	}
+	pkgs, err := packages.Load(cfg)
+	if err != nil {
+		panic(err)
+	}
+	if len(pkgs) != 1 {
+		panic(fmt.Errorf("got unexpected number of packages %v", len(pkgs)))
+	}
+	pkg := pkgs[0]
+```
+
+---
+
+# Build a code generator: implementation
+
+```go
+    // check whether the target Type (for example "Genre") is present
+    targetType := pkg.Types.Scope().Lookup(typeName)
+	if targetType == nil {
+		panic(fmt.Errorf("failed to find type declaration for %v", typeName))
+	}
+    
+	// lookup all constants of the target type (e.g. "horror", "drama", ...)
+	for _, file := range pkg.Syntax {
+		for _, decl := range file.Decls {
+			gd, ok := decl.(*ast.GenDecl) // keywords type, const or var
+			if !ok {
+				continue
+			}
+			if gd.Tok != token.CONST {
+				continue
+			}
+			for _, spec := range gd.Specs {
+				spec := spec.(*ast.ValueSpec)
+				for _, name := range spec.Names {
+					if pkg.TypesInfo.Defs[name].Type() == targetType.Type() {
+						constantNames = append(constantNames, name.Name)
+					}
+				}
+			}
+		}
+```
+
+---
+
+# Build a code generator: implementation
+
+```go
+// define our output template
+const outputTmpl = `package {{.PackageName}}
+import "fmt"
+
+// THIS FILE IS GENERATED, DO NOT EDIT MANUALLY
+
+func (v {{.Type}}) String() string {
+	switch v {
+		{{range .DeclaredConstants -}}
+	case {{.}}:
+		return "{{.}}"
+	{{end -}}
+	default:
+		panic(fmt.Errorf("unknown {{.Type}} value %d", v))
+	}
+}`
+```
+
+---
+
+# Build a code generator: implementation
+
+```go
+// create the output file
+outputFileName := fmt.Sprintf("gen_%v_string.go", strings.ToLower(typeName))
+outputFile, err := os.Create(outputFileName)
+if err != nil {
+	panic(err)
+}
+
+// prepare the values passed to the template, execute the template
+tmpl := template.Must(template.New("out").Parse(outputTmpl))
+if err := tmpl.Execute(outputFile, struct {
+	PackageName       string
+	Type              string
+	DeclaredConstants []string
+}{
+	PackageName:       pkg.Name,
+	Type:              typeName,
+	DeclaredConstants: constantNames,
+	}); err != nil {
+	panic(err)
+}
+
+if err := outputFile.Close(); err != nil {
+	panic(err)
+}
+```
+
+---
+
+# Build a code generator: compile!
+
+```go
+go build -o generator genres-example-1/gen
+```
+
+add `go:generate` directive to `genres.go`
+
+```go
+//go:generate ./generator Genre
+func main() {
+	fmt.Printf("Let's watch a %v movie today!", horror)
+}
+```
+
+and run `go generate .`
+
+---
+
+# Build a code generator: Execute!
+
+Output of `gen_genre_string.go`:
+
+```go
+package main
+
+// THIS FILE IS GENERATED, DO NOT EDIT MANUALLY
+
+import "fmt"
+
+func (v Genre) String() string {
+	switch v {
+		case comedy:
+		return "comedy"
+	case crime:
+		return "crime"
+	case drama:
+		return "drama"
+	case fantasy:
+		return "fantasy"
+	case horror:
+		return "horror"
+	default:
+		panic(fmt.Errorf("unknown Genre value %d", v))
+	}
+}
+```
+
+---
+
+# Build a code generator: Improvements!
+
+Format the generated Go code with `gofmt`
+
+```go
+// format formats a template using gofmt.
+func format(in io.Reader) (io.Reader, error) {
+	var out bytes.Buffer
+
+	gofmt := exec.Command("gofmt", "-s")
+	gofmt.Stdin = in
+	gofmt.Stdout = &out
+	gofmt.Stderr = os.Stderr
+	err := gofmt.Run()
+	return &out, err
+}
+```
+
+---
+
+# Build a code generator: Improvements!
+
+```go
+// ... 
+t, err := template.New("").Parse(tmpl)
+if err != nil {
+	return err
+}
+
+err = t.ExecuteTemplate(buf, "", data)	
+if err != nil {		
+	return err
+}
+
+src, err := format(buf) // format the generated code
+if err != nil {
+	return err
+}
+_, err = io.Copy(wr, src)
+return err
+```
+
+---
+
+# Let's wrap it up!
+
+In this talk we
+* Understood what code generation is
+* Examined the basic parts of a code generator
+* Looked at some (un)popular code generators e.g. `stringer`
+* Seen how we can add code generation to our dev workflow `go generate`
+* Wrote a simple code generator
+  * Not well-tested, lacks proper error handling (missing types, ...)
+  * not performant
+  * not the prettiest code ever
+
+---
+
+# Where to go from here? 
+
+* Code is available [here](https://github.com/cbrgm/codegen-example)
+* There's a great Article about `stringer` by Rob Pike [here](https://go.dev/blog/generate)
+* Check out Paul Jolly's Talk at GopherCon UK 2019 [here](https://www.youtube.com/watch?v=xcpboZZy-64)
+* Check out [cbrgm/githubevents](https://github.com/cbrgm/githubevents)
+  * Generated Go Library for Github Webhook Events (Feel free to contribute :D!!)
+
+...and also, MOIA is hiring :) Approach me if you're interested!
+
+---
+
+# Thank you!
+
+👨‍💻 __Christian Bargmann (cbrgm)__
+
+🐦 @chrisbargmann
+
+📧 chris@cbrgm.net
+
+
